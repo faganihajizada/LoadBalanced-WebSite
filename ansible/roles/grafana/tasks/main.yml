@@ -1,0 +1,77 @@
+---
+# tasks file for roles/grafana
+
+- name: Install gpg
+  apt:
+    name: gnupg,software-properties-common
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Add gpg hey
+  apt_key:
+    url: "https://packages.grafana.com/gpg.key"
+    validate_certs: no
+- name: Add repository
+  apt_repository:
+    repo: "deb https://packages.grafana.com/oss/deb stable main"             
+    state: present
+    validate_certs: no
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Start service grafana-server
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: yes
+
+- name: Wait for grafana service up
+  uri:
+    url: "http://127.0.0.1:3000"
+    status_code: 200
+  register: __result
+  until: __result.status == 200
+  retries: 120
+  delay: 1
+
+- name: Change the admin password of Grafana
+  shell: "grafana-cli admin reset-admin-password {{ grafana_admin_password }}"
+  register: __command_admin
+  changed_when: __command_admin.rc !=0
+
+- name: Add prometheus datasource
+  community.grafana.grafana_datasource:
+    name: prometheus
+    ds_type: prometheus
+    ds_url: http://localhost:9090
+    url: "http://{{ hostvars['grafana1'].ansible_host }}:3000"
+    url_username: "admin"
+    url_password: "{{ grafana_admin_password }}"
+    access: proxy
+
+- name: Import Grafana node-explorer dashboard
+  community.grafana.grafana_dashboard:
+    url_username: "admin"
+    url_password: "{{ grafana_admin_password }}"
+    grafana_url: "http://{{ hostvars['grafana1'].ansible_host }}:3000"
+    commit_message: Updated by ansible
+    state: present
+    overwrite: yes
+    dashboard_id: "1860"
+    dashboard_revision: "23"
+
+- name: Import Grafana haproxy dashboard
+  community.grafana.grafana_dashboard:
+    url_username: "admin"
+    url_password: "{{ grafana_admin_password }}"
+    grafana_url: "http://{{ hostvars['grafana1'].ansible_host }}:3000"
+    commit_message: Updated by ansible
+    state: present
+    overwrite: yes
+    path: https://raw.githubusercontent.com/faganihajizada/LoadBalanced-WebSite/main/ansible/roles/grafana/templates/haproxy_rev7.json

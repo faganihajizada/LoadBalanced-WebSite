@@ -1,0 +1,144 @@
+---
+# tasks file for roles/haproxy-exporter
+
+- name: Assert usage of systemd as an init system
+  assert:
+    that: ansible_service_mgr == 'systemd'
+    msg: "This role only works with systemd"
+
+- name: Get systemd version
+  command: systemctl --version
+  changed_when: false
+  check_mode: false
+  register: __systemd_version
+  tags:
+    - skip_ansible_lint
+
+- name: Set systemd version fact
+  set_fact:
+    haproxy_exporter_systemd_version: "{{ __systemd_version.stdout_lines[0].split(' ')[-1] }}"
+
+- name: Naive assertion of proper listen address
+  assert:
+    that:
+      - "':' in haproxy_exporter_web_listen_address"
+
+- block:
+    - name: Get latest release
+      uri:
+        url: "https://api.github.com/repos/prometheus/haproxy_exporter/releases/latest"
+        method: GET
+        return_content: true
+        status_code: 200
+        body_format: json
+        validate_certs: false
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      no_log: true
+      register: _latest_release
+      until: _latest_release.status == 200
+      retries: 5
+
+    - name: "Set haproxy_exporter version to {{ _latest_release.json.tag_name[1:] }}"
+      set_fact:
+        haproxy_exporter_version: "{{ _latest_release.json.tag_name[1:] }}"
+  when: haproxy_exporter_version == "latest"
+  delegate_to: localhost
+  run_once: true
+
+- name: Get checksum list from github
+  set_fact:
+    _checksums: "{{ lookup('url', 'https://github.com/prometheus/haproxy_exporter/releases/download/v' + haproxy_exporter_version + '/sha256sums.txt', wantlist=True) | list }}"
+  run_once: true
+
+- name: "Get checksum for {{ go_arch }} architecture"
+  set_fact:
+    haproxy_exporter_checksum: "{{ item.split(' ')[0] }}"
+  with_items: "{{ _checksums }}"
+  when: "('linux-' + go_arch + '.tar.gz') in item"
+
+- name: Install dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ haproxy_exporter_dependencies }}"
+
+- name: Create the haproxy_exporter group
+  group:
+    name: "{{ haproxy_exporter_system_group }}"
+    state: present
+    system: true
+  when: haproxy_exporter_system_group != "root"
+
+- name: Create the haproxy_exporter user
+  user:
+    name: "{{ haproxy_exporter_system_user }}"
+    groups: "{{ haproxy_exporter_system_group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    createhome: false
+    home: /
+  when: haproxy_exporter_system_user != "root"
+
+- name: Download haproxy_exporter binary to local folder
+  become: false
+  get_url:
+    url: "https://github.com/prometheus/haproxy_exporter/releases/download/v{{ haproxy_exporter_version }}/haproxy_exporter-{{ haproxy_exporter_version }}.linux-{{ go_arch }}.tar.gz"
+    dest: "/tmp/haproxy_exporter-{{ haproxy_exporter_version }}.linux-{{ go_arch }}.tar.gz"
+    checksum: "sha256:{{ haproxy_exporter_checksum }}"
+  register: _download_binary
+  until: _download_binary is succeeded
+  retries: 5
+  delay: 2
+  delegate_to: localhost
+  check_mode: false
+
+- name: install unzip (need for unpack/unarchive)
+  ansible.builtin.package:
+    name: unzip
+    state: present
+
+- name: Unpack haproxy_exporter binary
+  become: false
+  unarchive:
+    src: "/tmp/haproxy_exporter-{{ haproxy_exporter_version }}.linux-{{ go_arch }}.tar.gz"
+    dest: "/tmp"
+    creates: "/tmp/haproxy_exporter-{{ haproxy_exporter_version }}.linux-{{ go_arch }}/haproxy_exporter"
+  delegate_to: localhost
+  check_mode: false
+
+- name: Create /usr/local/bin
+  file:
+    path: /usr/local/bin
+    state: directory
+    mode: 0755
+
+- name: Propagate haproxy_exporter binaries
+  copy:
+    src: "/tmp/haproxy_exporter-{{ haproxy_exporter_version }}.linux-{{ go_arch }}/haproxy_exporter"
+    dest: "/usr/local/bin/haproxy_exporter"
+    mode: 0750
+    owner: "{{ haproxy_exporter_system_user }}"
+    group: "{{ haproxy_exporter_system_group }}"
+  notify: restart haproxy_exporter
+  when: not ansible_check_mode
+
+- name: Copy the HAProxy Exporter systemd service file
+  template:
+    src: haproxy_exporter.service.j2
+    dest: /etc/systemd/system/haproxy_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart haproxy_exporter
+
+- name: Ensure HAProxy Exporter is enabled on boot
+  become: true
+  systemd:
+    daemon_reload: true
+    name: haproxy_exporter
+    enabled: true
+    state: started
+  tags:
+    - haproxy_exporter_run

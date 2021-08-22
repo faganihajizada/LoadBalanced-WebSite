@@ -1,0 +1,29 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: Configure and deploy the Web Applications
+  hosts: webservers
+  become: true
+  roles:
+    - web-app
+
+- name: Install and configure HAProxy loadbalancer
+  hosts: loadbalancers
+  become: true
+  roles:
+    - load-balancer
+    - haproxy-exporter
+
+- name: Install and configure node-exporter
+  hosts: webservers, loadbalancers
+  become: yes
+  roles:
+  - node-exporter
+
+- name: install and configure prometheus-grafana stack
+  hosts: grafanaservers
+  become: yes
+  roles:
+  - grafana
+  - prometheus
+
