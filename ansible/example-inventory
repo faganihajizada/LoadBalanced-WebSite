@@ -1,0 +1,9 @@
+[webservers]
+web_server1 ansible_host=3.69.97.85 ansible_ssh_connection=ssh ansible_ssh_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+web_server2 ansible_host=3.69.78.163 ansible_ssh_connection=ssh ansible_ssh_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[loadbalancers]
+loadbalancer1 ansible_host=3.64.43.75 ansible_ssh_connection=ssh ansible_ssh_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[grafanaservers]
+grafana1 ansible_host=3.127.13.52 ansible_ssh_connection=ssh ansible_ssh_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa

@@ -1,0 +1,7 @@
+---
+# handlers file for roles/load-balancer
+
+- name: restart lbserver
+  service:
+    name: "haproxy"
+    state: restarted

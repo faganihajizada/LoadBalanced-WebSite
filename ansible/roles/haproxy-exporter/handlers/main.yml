@@ -1,0 +1,8 @@
+---
+# handlers file for roles/haproxy-exporter
+- name: restart haproxy_exporter
+  become: true
+  systemd:
+    daemon_reload: true
+    name: haproxy_exporter
+    state: restarted

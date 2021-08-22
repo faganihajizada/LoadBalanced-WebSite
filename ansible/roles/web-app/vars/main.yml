@@ -1,0 +1,6 @@
+---
+app_user: "ubuntu"
+http_host: "{{ ansible_host }}"
+http_conf: "{{ ansible_host }}.conf"
+http_port: "80"
+disable_default: true

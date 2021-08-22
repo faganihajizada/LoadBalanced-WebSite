@@ -1,0 +1,6 @@
+---
+# vars file for roles/grafana
+
+# Please  uncomment the line below and set an admin password for Grafana. This password will be used to access Grafana UI, create datasources and import dashboards
+
+#grafana_admin_password: ""
