@@ -130,7 +130,7 @@ Note: A bash code can be run to create traffic on loadbalancer and monitor:
 ## Credits
 ----------
 
-I've been inspired by the following open source projects:
+I've been inspired by & used the following open source projects:
 
 * [ prometheus/haproxy_exporter ](https://github.com/prometheus/haproxy_exporter)
 * [ rfrail3/grafana-dashboards ](https://github.com/rfrail3/grafana-dashboards)
