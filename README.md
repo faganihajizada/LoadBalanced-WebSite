@@ -60,39 +60,39 @@ Now we can get the IP address of `loadbalancer` and `grafana UI` from inventory 
 $ awk '{print $1 "\t" $2}'  ./ansible/inventory
 
 [webservers]
-web_server1     ansible_host=3.67.145.153
-web_server2     ansible_host=35.157.56.87
+web_server1     ansible_host={WEB_SERVER1_IP_ADDRESS}
+web_server2     ansible_host={WEB_SERVER2_IP_ADDRESS}
 
 [loadbalancers]
-loadbalancer1   ansible_host=18.156.139.80
+loadbalancer1   ansible_host={LOAD_BALANCER_IP_ADDRESS}
 
 [grafanaservers]
-grafana1        ansible_host=18.157.65.105
+grafana1        ansible_host={GRAFANA_PROMETHEUS_STACK_IP_ADDRESS}
 
 ```
 
 Try to access web site:
 ```
-$ curl http://18.156.139.80        
+$ curl {LOAD_BALANCER_IP_ADDRESS}   
 
 <html>
     <head>
-        <title>Welcome to 35.157.56.87 !</title>
+        <title>Welcome to {WEB_SERVER1_IP_ADDRESS} !</title>
     </head>
     <body>
-        <h1>The apache virtual is running! IP Address: 35.157.56.87! </h1>
+        <h1>The apache virtual is running! IP Address: {WEB_SERVER1_IP_ADDRESS}! </h1>
     </body>
 </html>%
 
 
-$ curl http://18.156.139.80
+$ curl {LOAD_BALANCER_IP_ADDRESS}
 
 <html>
     <head>
-        <title>Welcome to 3.67.145.153 !</title>
+        <title>Welcome to {WEB_SERVER2_IP_ADDRESS}!</title>
     </head>
     <body>
-        <h1>The apache virtual is running! IP Address: 3.67.145.153! </h1>
+        <h1>The apache virtual is running! IP Address: {WEB_SERVER2_IP_ADDRESS}</h1>
     </body>
 </html>%
 ```
@@ -106,12 +106,12 @@ There will be 1 datasource (`prometheus`) and 2 dashboards (`HAProxy and Node Ex
 
 - The `Node Exporter Full` dashboard contains metrics from these servers:
   
-  - `loadbalancer1 ansible_host=18.156.139.80`
-  - `web_server1 ansible_host=3.67.145.153`
-  - `web_server2 ansible_host=35.157.56.87`
+  - `loadbalancer1 ansible_host={LOAD_BALANCER_IP_ADDRESS}`
+  - `web_server1 ansible_host={WEB_SERVER1_IP_ADDRESS}`
+  - `web_server2 ansible_host={WEB_SERVER2_IP_ADDRESS}`
 
 Note: A bash code can be run to create traffic on loadbalancer and monitor: 
-- ```while true;do curl http://{locadbalancer1 IP Address};done```
+- ```while true;do curl http://{LOAD_BALANCER_IP_ADDRESS};done```
 
 ### Architecture
 ----------
