@@ -54,72 +54,83 @@ web_server2                : ok=19   changed=16   unreachable=0    failed=0    s
 
 ```
 
-Now we can get the IP address of `loadbalancer` and `grafana UI` from inventory file. We can just open the `./ansible/inventory` file or use bash tools like awk to get the required IP addresses (ex: `awk '{print $1 "\t" $2}'  ./ansible/inventory`)
+Now we can get the IP address of `loadbalancer` and `grafana UI` from inventory file. We can just open the `./ansible/inventory` file or use bash tools like awk to get the required IP addresses:
 
 ```
 $ awk '{print $1 "\t" $2}'  ./ansible/inventory
 
 [webservers]
-web_server1     ansible_host=3.67.145.153
-web_server2     ansible_host=35.157.56.87
+web_server1     ansible_host={WEB_SERVER1_IP_ADDRESS}
+web_server2     ansible_host={WEB_SERVER2_IP_ADDRESS}
 
 [loadbalancers]
-loadbalancer1   ansible_host=18.156.139.80
+loadbalancer1   ansible_host={LOAD_BALANCER_IP_ADDRESS}
 
 [grafanaservers]
-grafana1        ansible_host=18.157.65.105
+grafana1        ansible_host={GRAFANA_PROMETHEUS_STACK_IP_ADDRESS}
 
 ```
 
 Try to access web site:
 ```
-$ curl http://18.156.139.80        
+$ curl {LOAD_BALANCER_IP_ADDRESS}   
 
 <html>
     <head>
-        <title>Welcome to 35.157.56.87 !</title>
+        <title>Welcome to {WEB_SERVER1_IP_ADDRESS} !</title>
     </head>
     <body>
-        <h1>The apache virtual is running! IP Address: 35.157.56.87! </h1>
+        <h1>The apache virtual is running! IP Address: {WEB_SERVER1_IP_ADDRESS}! </h1>
     </body>
 </html>%
 
 
-$ curl http://18.156.139.80
+$ curl {LOAD_BALANCER_IP_ADDRESS}
 
 <html>
     <head>
-        <title>Welcome to 3.67.145.153 !</title>
+        <title>Welcome to {WEB_SERVER2_IP_ADDRESS}!</title>
     </head>
     <body>
-        <h1>The apache virtual is running! IP Address: 3.67.145.153! </h1>
+        <h1>The apache virtual is running! IP Address: {WEB_SERVER2_IP_ADDRESS}</h1>
     </body>
 </html>%
 ```
 As we can see the HAProxy `roundrobin` configuration works!
 
-In order to access Grafana UI and check dashboards and collected metrics open the grafana1 host (18.157.65.105) in browser and access via password which set in [grafana variable file](./ansible/roles/grafana/vars/main.yml).
+In order to access Grafana UI and check dashboards and collected metrics open the grafana1 host {GRAFANA_PROMETHEUS_STACK_IP_ADDRESS} in browser and access via password which set in [grafana variable file](./ansible/roles/grafana/vars/main.yml).
 
-There will be 1 datasource `prometheus` and 2 dashboards `HAProxy and Node Exporter Full` created.
+There will be 1 datasource (`prometheus`) and 2 dashboards (`HAProxy and Node Exporter Full`) created.
 
 - The `HAProxy` dashboard contains metrics from loadbalancer. The `Relative time ranges` and `Refresh dashboard` settings can be configured to see data.
 
 - The `Node Exporter Full` dashboard contains metrics from these servers:
   
-  - `loadbalancer1 ansible_host=18.156.139.80`
-  - `web_server1 ansible_host=3.67.145.153`
-  - `web_server2 ansible_host=35.157.56.87`
+  - `loadbalancer1 ansible_host={LOAD_BALANCER_IP_ADDRESS}`
+  - `web_server1 ansible_host={WEB_SERVER1_IP_ADDRESS}`
+  - `web_server2 ansible_host={WEB_SERVER2_IP_ADDRESS}`
 
-Note: A bash code can be run to create traffic on loadbalancer and monitor: ```while true;do curl http://{locadbalancer1 IP Address};done```
+Note: A bash code can be run to create traffic on loadbalancer and monitor: 
+- ```while true;do curl http://{LOAD_BALANCER_IP_ADDRESS};done```
 
 ### Architecture
 ----------
 
 ![Architecture](repo-files/architecture.png "Architecture")
 
-## Credits
+### Ideas for improvement
+----------
 
-I've been inspired by the following open source projects:
+- Currently generating Ansible inventory from terraform outputs is based on `local-exec` feature of terraform and I used script for that
+- Currently there is no any check for AMI ID. Checking availability of the provided `ami-id` by terraform vars based on region needs to be implemented
+- There is no any tests configured. Tests for ansible roles needs to be implemented
+- Currently terraform exposes required ports to internet. Connections between services can be done privately. Multiple VPCs and VPC Peering needs to be implemented
+- Currently there is no SSL enabled for the services. Certificates from private certificate authorities or non-profit certificate authorities like [Lets Encrypt](https://letsencrypt.org/) can be added
+
+## Credits
+----------
+
+I've been inspired by & used the following open source projects:
 
 * [ prometheus/haproxy_exporter ](https://github.com/prometheus/haproxy_exporter)
 * [ rfrail3/grafana-dashboards ](https://github.com/rfrail3/grafana-dashboards)
