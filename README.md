@@ -98,7 +98,7 @@ $ curl {LOAD_BALANCER_IP_ADDRESS}
 ```
 As we can see the HAProxy `roundrobin` configuration works!
 
-In order to access Grafana UI and check dashboards and collected metrics open the grafana1 host (18.157.65.105) in browser and access via password which set in [grafana variable file](./ansible/roles/grafana/vars/main.yml).
+In order to access Grafana UI and check dashboards and collected metrics open the grafana1 host {GRAFANA_PROMETHEUS_STACK_IP_ADDRESS} in browser and access via password which set in [grafana variable file](./ansible/roles/grafana/vars/main.yml).
 
 There will be 1 datasource (`prometheus`) and 2 dashboards (`HAProxy and Node Exporter Full`) created.
 
