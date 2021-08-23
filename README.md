@@ -122,7 +122,6 @@ Note: A bash code can be run to create traffic on loadbalancer and monitor:
 ----------
 
 - There is an issue with [HAProxy dashboard for grafana](https://grafana.com/grafana/dashboards/2428). When trying to import it via ansible module it returns `Datasource named ${DS_PROMETHEUS} was not found` error message. In order to fix that I customized the template and uploaded to this repository: [haproxy_rev7.json](ansible/roles/grafana/templates/haproxy_rev7.json)
-- Currently generating Ansible inventory from terraform outputs is based on `local-exec` feature of terraform and I used script for that
 - Currently there is no any check for AMI ID. Checking availability of the provided `ami-id` by terraform vars based on region needs to be implemented
 - There is no any tests configured. Tests for ansible roles needs to be implemented
 - Currently terraform exposes required ports to internet. Connections between services can be done privately. Multiple VPCs and VPC Peering needs to be implemented
